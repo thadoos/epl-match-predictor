@@ -24,7 +24,7 @@ The main weakness is draws: ensemble draw recall is only 13.7%. See [Results](#r
 
 ## Approach
 
-![Model architecture: base learners (auxiliary closeness model, Poisson, CatBoost, XGBoost) feed three meta-learners (Home, Away, Draw), whose outputs pass through a softmax to give the final prediction](architecture.png)
+![Model architecture: base learners (auxiliary closeness model, Poisson, CatBoost, XGBoost) feed three meta-learners (Home, Away, Draw), whose outputs pass through a softmax to give the final prediction](/figures/architecture.png)
 
 *Raw match data is turned into features. An auxiliary closeness model feeds CatBoost and XGBoost. Poisson, CatBoost and XGBoost output class probabilities, and three meta-learners (one per outcome) combine them. A softmax over the meta-learner outputs gives the final H / D / A prediction.*
 
