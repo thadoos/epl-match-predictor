@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Secrets / API keys
+.env
+*.key
+
+# Local data and caches (raw data is not committed)
+data/
+*.csv
+!predictions.csv
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
