@@ -24,7 +24,7 @@ The main weakness is draws: ensemble draw recall is only 13.7%. See [Results](#r
 
 ## Approach
 
-![Model architecture: base learners (auxiliary closeness model, Poisson, CatBoost, XGBoost) feed three meta-learners (Home, Away, Draw), whose outputs pass through a softmax to give the final prediction](/figures/architecture.png)
+![Model architecture: base learners (auxiliary closeness model, Poisson, CatBoost, XGBoost) feed three meta-learners (Home, Away, Draw), whose outputs pass through a softmax to give the final prediction](figures/architecture.png)
 
 *Raw match data is turned into features. An auxiliary closeness model feeds CatBoost and XGBoost. Poisson, CatBoost and XGBoost output class probabilities, and three meta-learners (one per outcome) combine them. A softmax over the meta-learner outputs gives the final H / D / A prediction.*
 
@@ -53,6 +53,10 @@ A typical ensemble has several models each predict an outcome, then combines the
 1. **Base learners** (Poisson, CatBoost, XGBoost) do not make the final call. Each one outputs probabilities for Home, Draw and Away, which capture what that model has learned from the features.
 2. **Meta-learners** (one per outcome) take those probabilities as input and learn how much to trust each base model for that outcome. Each outputs a probability for its own outcome.
 3. **A softmax** over the three meta-learner outputs gives the final probabilities, and `argmax` gives the prediction.
+
+![Final meta-learner coefficients: Home and Away weight all nine base probabilities; Draw uses XGBoost only](figures/meta_coefficients.png)
+
+*Coefficients of each meta-learner on the base-model probabilities (suffix = outcome: H / D / A).*
 
 Because the weighting is learned from out-of-fold predictions instead of being fixed, the system can rely on different models for different outcomes. For draws, it uses only XGBoost's probabilities.
 
@@ -104,9 +108,15 @@ Per-model results from the notebook's final run (small differences from the repo
 | XGBoost | 51.0% | 60.7 | 32.8 | 55.2 |
 | **Ensemble** | **56.1%** | 67.1 | 14.3 | 61.8 |
 
+![Per-model accuracy and F1 by class](figures/model_comparison.png)
+
 **Reading the table:** the ensemble roughly matches the best single model (CatBoost) rather than clearly beating it. It does beat the bookmaker benchmark. See [Why not just use CatBoost?](#why-not-just-use-catboost) for why the stacked design was kept.
 
 **Live check:** on 20 real fixtures from the 2025/26 season, played after the training cutoff, the model got 11 / 20 correct (55%). The sample is small and noisy, so treat it as a sanity check, not evidence.
+
+![Row-normalised confusion matrices for all four models on the test set](figures/confusion_matrix.png)
+
+*Row-normalised: each row shows what happened to matches of that actual outcome. Every model except XGBoost rarely predicts a draw.*
 
 Predictions for the 31 January 2026 fixtures are in [`predictions.csv`](predictions.csv).
 
@@ -128,7 +138,13 @@ Training the meta-learner on out-of-fold predictions rather than in-sample predi
 Training accuracy fell and test accuracy rose, which is the signature of reduced overfitting.
 
 **3. Diagnosing the draw problem.**
-The meta-learner coefficients showed it over-weighting CatBoost's draw probability. Routing draw prediction through XGBoost only (the draw-weighted model) improved draw signal, but the ensemble's final draw recall stayed at 13.7%.
+The meta-learner coefficients showed it over-weighting CatBoost's draw probability.
+
+![Meta-learner coefficients before the fix: the Draw meta-learner gives CatBoost_D the largest weight](figures/meta_coefficients_before_fix.png)
+
+*Before: the Draw meta-learner saw all nine probabilities.*
+
+Routing draw prediction through XGBoost only (the draw-weighted model) improved draw signal, but the ensemble's final draw recall stayed at 13.7%.
 
 **4. ELO dominates.**
 `elo_home_win_prob`, `elo_away_win_prob`, `elo_diff` and the raw ELO ratings rank highest in both CatBoost and XGBoost feature importance. External rating data mattered more than form features alone.
@@ -150,8 +166,7 @@ The meta-learner coefficients showed it over-weighting CatBoost's draw probabili
 
 This was a group project.
 
-I personally led the model innovation, training, validation and evaluation (70% contribution)
-
+I personally led the model innovation, training, validation and evaluation (70% contribution).
 
 ---
 
@@ -161,7 +176,7 @@ I personally led the model innovation, training, validation and evaluation (70% 
 .
 ├── README.md
 ├── epl_match_predictor.ipynb   # full pipeline, executed with outputs
-├── architecture.png            # model architecture diagram
+├── figures/                     # figures used in this README
 ├── report.pdf                  # coursework report
 └── predictions.csv             # predictions for 31 Jan 2026 fixtures
 ```
